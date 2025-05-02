@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>mohajbtyt - تحويل النص إلى صورة</title>
+  <style>
+    body {
+      background-image: url('https://wallpapercave.com/wp/wp4923982.jpg');
+      background-size: cover;
+      background-attachment: fixed;
+      font-family: 'Arial', sans-serif;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: #111 !important;
+      color: #eee !important;
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    #output-img {
+      margin-top: 20px;
+      max-width: 90%;
+      border: 3px solid white;
+    }
+    #points {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+    button:hover {
+      background-color: #444;
+      color: #fff;
+    }
+    #lang-select {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeSgb5saGrZilnnUb6JjO8Wh4eD1lpd3w",
+      authDomain: "mohajbtyt1.firebaseapp.com",
+      projectId: "mohajbtyt1",
+      storageBucket: "mohajbtyt1.appspot.com",
+      messagingSenderId: "507057943873",
+      appId: "1:507057943873:web:d3bd597b553c4723f85dc0",
+      measurementId: "G-H1TCXK07PT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    
+    const db = getFirestore();
+
+    let userData = true;
+    let imageUrl = "";
+
+    async function updatePointsDisplay() {
+      if (userData) {
+        const docRef = doc(db, "users", userData.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById("points").textContent = "رصيدك: " + data.points;
+        }
+      }
+    }
+
+    async function updateLeaderboard() {
+      const usersRef = collection(db, "users");
+      const querySnapshot = await getDoc(doc(usersRef, "top"));
+      if (querySnapshot.exists()) {
+        document.getElementById("leaderboard").textContent = "أفضل المستخدمين قريباً...";
+      }
+    }
+
+    
+
+    document.getElementById("recharge").onclick = async () => {
+      
+      const ref = doc(db, "users", userData.uid);
+      const snap = await getDoc(ref);
+      let current = snap.data().points;
+      await updateDoc(ref, { points: current + 5 });
+      updatePointsDisplay();
+    };
+
+    document.getElementById("generate").onclick = async () => {
+      const text = document.getElementById("text").value.trim();
+      if (text.length === 0) return alert("اكتب نصاً أولاً");
+      if (text.length > 50) return alert("الحد الأقصى للنص هو 50 حرف");
+      
+      const ref = doc(db, "users", userData.uid);
+      const snap = await getDoc(ref);
+      let current = snap.data().points;
+      if (current <= 0) return alert("ليس لديك رصيد كافٍ");
+      await updateDoc(ref, { points: current - 1 });
+      await addDoc(collection(db, "history"), {
+        uid: userData.uid,
+        text: text,
+        timestamp: new Date()
+      });
+      updatePointsDisplay();
+      document.getElementById("output-img").src = "";
+      document.getElementById("loading").textContent = "جاري التوليد...";
+      setTimeout(() => {
+        imageUrl = "https://via.placeholder.com/1024x768.png?text=" + encodeURIComponent(text);
+        document.getElementById("output-img").src = imageUrl;
+        document.getElementById("loading").textContent = "";
+        document.getElementById("save-btn").style.display = "inline-block";
+      }, 4000);
+    };
+
+    document.getElementById("save-btn").onclick = () => {
+      const link = document.createElement("a");
+      link.href = imageUrl;
+      link.download = "image.png";
+      link.click();
+    };
+
+    document.getElementById("toggle-mode").onclick = () => {
+      document.body.classList.toggle("dark-mode");
+    };
+
+    document.getElementById("lang-select").onchange = (e) => {
+      alert("تغيير اللغة غير مفعّل حالياً.");
+    };
+  
+    let backgrounds = ['https://wallpapercave.com/wp/wp4923982.jpg', 'https://wallpapercave.com/wp/wp2757874.jpg', 'https://wallpapercave.com/wp/wp2757860.jpg', 'https://wallpapercave.com/wp/wp6606162.jpg'];
+    let currentBg = 0;
+    document.getElementById("change-bg").onclick = () => {
+      currentBg = (currentBg + 1) % backgrounds.length;
+      document.body.style.backgroundImage = `url('${backgrounds[currentBg]}')`;
+    };
+
+  
+    const bgMusic = document.getElementById("bg-music");
+    const toggleMusicBtn = document.getElementById("toggle-music");
+    toggleMusicBtn.onclick = () => {
+      if (bgMusic.paused) {
+        bgMusic.play();
+        toggleMusicBtn.textContent = "إيقاف الموسيقى";
+      } else {
+        bgMusic.pause();
+        toggleMusicBtn.textContent = "تشغيل الموسيقى";
+      }
+    };
+
+</script>
+<style>
+    body {
+      transition: background 1s ease, color 1s ease;
+    }
+    button {
+      transition: transform 0.2s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    #output-img {
+      transition: transform 0.4s ease;
+    }
+    #output-img:hover {
+      transform: scale(1.02);
+    }
+</style>
+</head>
+<body>
+
+<audio id="bg-music" autoplay loop>
+  <source src="https://cdn.pixabay.com/audio/2023/03/16/audio_6112c20c7d.mp3" type="audio/mpeg">
+</audio>
+<button id="toggle-music">إيقاف الموسيقى</button>
+
+  <select id="lang-select">
+    <option value="ar">العربية</option>
+    <option value="en">English</option>
+  </select>
+
+  <h1>تحويل النص إلى صورة - mohajbtyt</h1>
+  <div id="points">رصيدك: 0</div>
+  
+  <input type="text" id="text" placeholder="اكتب النص هنا (50 حرف)" maxlength="50">
+  <br>
+  <button id="generate">توليد صورة</button>
+  <button id="recharge">إعادة شحن الرصيد (+5)</button>
+  <button id="toggle-mode">وضع داكن/فاتح</button>
+  <button id="change-bg">تغيير الخلفية</button>
+  <br><br>
+  <div id="loading" style="font-size: 18px;"></div>
+  <img id="output-img" src="" alt="الصورة المولدة">
+  <br><br>
+  <button id="save-btn" style="display:none;">حفظ الصورة</button>
+  <br><br>
+  <div id="leaderboard"></div>
+</body>
+</html>
